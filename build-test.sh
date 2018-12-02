@@ -211,10 +211,11 @@ post() {
     local url="https://api.github.com/repos/$org/$repo/issues"
     local type='Content-Type: application/json'
     local auth="Authorization: token $GITHUB_ACCESS_TOKEN"
+    local args=(-H "$type" -H "$auth" -d "$data" "$url")
     if [[ -z "$ISSUE" ]]; then
-        printf '%s\n' curl -H "$type" -H "$auth" -d "$data" "$url" >&$COMPILELOG
+        echo curl "${args[@]@Q}" >&$POSTLOG
     else
-        curl -H "$type" -H "$auth" -d "$data" "$url"
+        curl "${args[@]}"
     fi
 }
 
@@ -233,7 +234,7 @@ if [[ -n "${DEBUG:-}" ]]; then
     set -ux
     exec {PUSHLOG}> >(tee push.log >&$ALLLOG)
     exec {POPLOG}> >(tee pop.log >&$ALLLOG)
-    exec {COMPILELOG}> >(tee compile.log >&$ALLLOG)
+    exec {POSTLOG}> >(tee post.log >&$ALLLOG)
     exec {JAVAERR}>java-err.log
     exec {OCAMLERR}>ocaml-err.log
     exec {REPORTERR}>report-err.log
@@ -241,7 +242,7 @@ if [[ -n "${DEBUG:-}" ]]; then
 else
     exec {PUSHLOG}>/dev/null
     exec {POPLOG}>/dev/null
-    exec {COMPILELOG}>/dev/null
+    exec {POSTLOG}>&1
     exec {JAVAERR}>/dev/null
     exec {OCAMLERR}>/dev/null
     exec {REPORTERR}>/dev/null
